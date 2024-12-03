@@ -15,6 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package ac.grim.grimac.checks.impl.combat;
 
+import ac.grim.grimac.GrimAC;
+import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
@@ -147,14 +149,20 @@ public class Reach extends Check implements PacketCheck {
             if (reachEntity != null) {
                 String result = checkReach(reachEntity, attack.getValue(), false);
                 if (result != null) {
-                    if (reachEntity.getType() == EntityTypes.PLAYER) {
-                        flagAndAlert(result);
+                    if (result.equals("Missed hitbox")) {
+                        HitBox hitbox = player.checkManager.getPacketCheck(HitBox.class);
+                        hitbox.flagAndAlert();
                     } else {
-                        flagAndAlert(result + " type=" + reachEntity.getType().getName().getKey());
+                        if (reachEntity.getType() == EntityTypes.PLAYER) {
+                            flagAndAlert(result);
+                        } else {
+                            flagAndAlert(result + " type=" + reachEntity.getType().getName().getKey());
+                        }
                     }
                 }
             }
         }
+
         playerAttackQueue.clear();
     }
 

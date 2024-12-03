@@ -6,6 +6,7 @@ import ac.grim.grimac.checks.impl.aim.AimDuplicateLook;
 import ac.grim.grimac.checks.impl.aim.AimModulo360;
 import ac.grim.grimac.checks.impl.aim.processor.AimProcessor;
 import ac.grim.grimac.checks.impl.badpackets.*;
+import ac.grim.grimac.checks.impl.combat.HitBox;
 import ac.grim.grimac.checks.impl.combat.Reach;
 import ac.grim.grimac.checks.impl.crash.*;
 import ac.grim.grimac.checks.impl.exploit.ExploitA;
@@ -44,6 +45,7 @@ import com.google.common.collect.ClassToInstanceMap;
 import com.google.common.collect.ImmutableClassToInstanceMap;
 
 public class CheckManager {
+
     ClassToInstanceMap<PacketCheck> packetChecks;
     ClassToInstanceMap<PositionCheck> positionCheck;
     ClassToInstanceMap<RotationCheck> rotationCheck;
@@ -59,6 +61,7 @@ public class CheckManager {
         // Include post checks in the packet check too
         packetChecks = new ImmutableClassToInstanceMap.Builder<PacketCheck>()
                 .put(Reach.class, new Reach(player))
+                .put(HitBox.class, new HitBox(player))
                 .put(PacketEntityReplication.class, new PacketEntityReplication(player))
                 .put(PacketChangeGameState.class, new PacketChangeGameState(player))
                 .put(CompensatedInventory.class, new CompensatedInventory(player))
