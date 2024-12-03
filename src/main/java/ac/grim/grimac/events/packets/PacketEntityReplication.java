@@ -1,6 +1,6 @@
 package ac.grim.grimac.events.packets;
 
-import ac.grim.grimac.GrimAPI;
+import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.type.PacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
@@ -53,7 +53,6 @@ public class PacketEntityReplication extends Check implements PacketCheck {
     private final List<Integer> despawnedEntitiesThisTransaction = new ArrayList<>();
 
     // Maximum ping when a firework boost is removed from the player.
-    private final int maxFireworkBoostPing = GrimAPI.INSTANCE.getConfigManager().getConfig().getIntElse("max-ping-firework-boost", 1000);
 
     public PacketEntityReplication(GrimPlayer player) {
         super(player);
@@ -99,7 +98,10 @@ public class PacketEntityReplication extends Check implements PacketCheck {
             WrapperPlayServerSpawnPlayer packetOutEntity = new WrapperPlayServerSpawnPlayer(event);
             addEntity(packetOutEntity.getEntityId(), packetOutEntity.getUUID(), EntityTypes.PLAYER, packetOutEntity.getPosition(), packetOutEntity.getYaw(), packetOutEntity.getPitch(), packetOutEntity.getEntityMetadata(), 0);
         }
-
+        if (event.getPacketType() == PacketType.Play.Server.SPAWN_PAINTING) {
+            WrapperPlayServerSpawnPainting packetOutEntity = new WrapperPlayServerSpawnPainting(event);
+            addEntity(packetOutEntity.getEntityId(), packetOutEntity.getUUID(), EntityTypes.PAINTING, packetOutEntity.getPosition().toVector3d(), 0, 0f, null, packetOutEntity.getDirection().getHorizontalIndex());
+        }
         if (event.getPacketType() == PacketType.Play.Server.ENTITY_RELATIVE_MOVE) {
             WrapperPlayServerEntityRelativeMove move = new WrapperPlayServerEntityRelativeMove(event);
             handleMoveEntity(event, move.getEntityId(), move.getDeltaX(), move.getDeltaY(), move.getDeltaZ(), null, null, true, true);
@@ -117,7 +119,6 @@ public class PacketEntityReplication extends Check implements PacketCheck {
             WrapperPlayServerEntityRotation move = new WrapperPlayServerEntityRotation(event);
             handleMoveEntity(event, move.getEntityId(), 0, 0, 0, move.getYaw() * 0.7111111F, move.getPitch() * 0.7111111F, true, false);
         }
-
         if (event.getPacketType() == PacketType.Play.Server.ENTITY_METADATA) {
             WrapperPlayServerEntityMetadata entityMetadata = new WrapperPlayServerEntityMetadata(event);
             player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> player.compensatedEntities.updateEntityMetadata(entityMetadata.getEntityId(), entityMetadata.getEntityMetadata()));
@@ -228,9 +229,8 @@ public class PacketEntityReplication extends Check implements PacketCheck {
 
             if (status.getStatus() == 31) {
                 PacketEntity hook = player.compensatedEntities.getEntity(status.getEntityId());
-                if (!(hook instanceof PacketEntityHook)) return;
+                if (!(hook instanceof PacketEntityHook hookEntity)) return;
 
-                PacketEntityHook hookEntity = (PacketEntityHook) hook;
                 if (hookEntity.attached == player.entityID) {
                     player.sendTransaction();
                     // We don't transaction sandwich this, it's too rare to be a real problem.
@@ -455,8 +455,7 @@ public class PacketEntityReplication extends Check implements PacketCheck {
         player.latencyUtils.addRealTimeTask(lastTrans, () -> {
             PacketEntity entity = player.compensatedEntities.getEntity(entityId);
             if (entity == null) return;
-            if (entity instanceof PacketEntityTrackXRot && yaw != null) {
-                PacketEntityTrackXRot xRotEntity = (PacketEntityTrackXRot) entity;
+            if (entity instanceof PacketEntityTrackXRot xRotEntity && yaw != null) {
                 xRotEntity.packetYaw = yaw;
                 xRotEntity.steps = entity.isBoat() ? 10 : 3;
             }
@@ -500,4 +499,12 @@ public class PacketEntityReplication extends Check implements PacketCheck {
     public void tickStartTick() {
         hasSentPreWavePacket = false;
     }
+
+    private int maxFireworkBoostPing = 1000;
+
+    @Override
+    public void onReload(ConfigManager config) {
+        maxFireworkBoostPing = config.getIntElse("max-ping-firework-boost", 1000);
+    }
+
 }

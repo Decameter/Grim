@@ -25,6 +25,7 @@ public class Check implements AbstractCheck, ConfigReloadObserver {
     private String checkName;
     private String configName;
     private String alternativeName;
+    private String displayName;
     private String description;
 
     private boolean experimental;
@@ -53,9 +54,10 @@ public class Check implements AbstractCheck, ConfigReloadObserver {
             this.alternativeName = checkData.alternativeName();
             this.experimental = checkData.experimental();
             this.description = checkData.description();
+            this.displayName = this.checkName;
         }
         //
-        reload(GrimAPI.INSTANCE.getConfigManager().getConfig());
+        reload();
     }
 
     public boolean shouldModifyPackets() {
@@ -82,7 +84,7 @@ public class Check implements AbstractCheck, ConfigReloadObserver {
     }
 
     public final boolean flag() {
-        if (player.disableGrim || (experimental && !GrimAPI.INSTANCE.getConfigManager().isExperimentalChecks()) || exempted)
+        if (player.disableGrim || (experimental && !player.isExperimentalChecks()) || exempted)
             return false; // Avoid calling event if disabled
 
         FlagEvent event = new FlagEvent(player, this);
@@ -112,6 +114,8 @@ public class Check implements AbstractCheck, ConfigReloadObserver {
     public void reload(ConfigManager configuration) {
         decay = configuration.getDoubleElse(configName + ".decay", decay);
         setbackVL = configuration.getDoubleElse(configName + ".setbackvl", setbackVL);
+        displayName = configuration.getStringElse(configName + ".displayname", checkName);
+
         if (setbackVL == -1) setbackVL = Double.MAX_VALUE;
         updateExempted();
         onReload(configuration);
@@ -152,4 +156,3 @@ public class Check implements AbstractCheck, ConfigReloadObserver {
     }
 
 }
-
